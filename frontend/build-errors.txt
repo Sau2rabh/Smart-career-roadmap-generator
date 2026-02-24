@@ -1,0 +1,106 @@
+﻿
+> frontend@0.1.0 build
+> next build
+
+node.exe : ΓÜá Warning: 
+Next.js inferred your 
+workspace root, but it may 
+not be correct.
+At C:\Program 
+Files\nodejs\npm.ps1:29 
+char:3
++   & $NODE_EXE 
+$NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (ΓÜá  
+   Warning: Ne...not be    
+ correct.:String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+ We detected multiple 
+lockfiles and selected the 
+directory of C:\Users\anand
+\package-lock.json as the 
+root directory.
+ To silence this warning, 
+set `turbopack.root` in 
+your Next.js config, or 
+consider removing one of 
+the lockfiles if it's not 
+needed.
+   See https://nextjs.org/d
+ocs/app/api-reference/confi
+g/next-config-js/turbopack#
+root-directory for more 
+information.
+ Detected additional 
+lockfiles: 
+   * C:\Users\anand\Downloa
+ds\Desktop\Smart Career 
+Roadmap Generator\frontend\
+package-lock.json
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+ΓÜá The "middleware" file 
+convention is deprecated. 
+Please use "proxy" 
+instead. Learn more: https:
+//nextjs.org/docs/messages/
+middleware-to-proxy
+  Creating an optimized production build ...
+Found 1 warning while 
+optimizing generated CSS:
+
+[2mΓöé   }[22m
+[2mΓöé }[22m
+[2mΓöé[22m @import url('h
+ttps://fonts.googleapis.com
+/css2?family=Inter:wght@300
+;400;500;600;700;800&displa
+y=swap');
+[2mΓöå[22m        
+[33m[2m^--[22m @import 
+rules must precede all 
+rules aside from @charset 
+and @layer statements[39m
+[2mΓöå[22m
+[2mΓöé :root {[22m
+[2mΓöé   --background: 0 
+0% 100%;[22m
+
+Γ£ô Compiled successfully in 8.3s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/15) ...
+  Generating static pages using 11 workers (3/15) 
+  Generating static pages using 11 workers (7/15) 
+  Generating static pages using 11 workers (11/15) 
+Γ£ô Generating static pages using 11 workers (15/15) in 661.9ms
+  Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ Γùï /dashboard
+Γö£ Γùï /interview
+Γö£ Γùï /login
+Γö£ Γùï /mentor
+Γö£ Γùï /progress
+Γö£ Γùï /projects
+Γö£ Γùï /resume
+Γö£ Γùï /roadmap
+Γö£ Γùï /setup
+Γö£ Γùï /signup
+Γöö Γùï /skill-gap
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)  prerendered as static content
+
