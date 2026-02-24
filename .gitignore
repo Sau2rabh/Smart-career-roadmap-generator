@@ -1,0 +1,16 @@
+# Smart Career Roadmap Generator
+node_modules/
+.env
+.env.*
+!**/.env.example
+!**/.env.local.example
+.next/
+dist/
+build/
+*.log
+.DS_Store
+uploads/
+secrets.tmp
+*.pem
+*.key
+*.cert
