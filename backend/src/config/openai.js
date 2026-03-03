@@ -1,17 +1,15 @@
-const OpenAI = require('openai');
+const { GoogleGenAI } = require('@google/genai');
 
-let openaiClient = null;
+let genAIClient = null;
 
 const getOpenAIClient = () => {
-  if (!openaiClient) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not set in environment variables');
+  if (!genAIClient) {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not set in environment variables');
     }
-    openaiClient = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    genAIClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
-  return openaiClient;
+  return genAIClient;
 };
 
 module.exports = { getOpenAIClient };

@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 const protectedPaths = ['/dashboard', '/roadmap', '/skill-gap', '/mentor', '/projects', '/progress', '/resume', '/interview', '/setup'];
 const authPaths = ['/login', '/signup'];
 
-export function middleware(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('accessToken')?.value;
 

@@ -19,6 +19,8 @@ const progressRoutes = require('./routes/progress.routes');
 const projectsRoutes = require('./routes/projects.routes');
 const resumeRoutes = require('./routes/resume.routes');
 const interviewRoutes = require('./routes/interview.routes');
+const youtubeRoutes = require('./routes/youtube.routes');
+const learnRoutes = require('./routes/learn.routes');
 
 const app = express();
 
@@ -65,6 +67,8 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/interview', interviewRoutes);
+app.use('/api/youtube', youtubeRoutes);
+app.use('/api/learn', learnRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

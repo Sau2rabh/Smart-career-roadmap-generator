@@ -99,3 +99,19 @@ export const interviewApi = {
     api.post('/interview/answer', data),
   getHistory: () => api.get('/interview/history'),
 };
+
+export const youtubeApi = {
+  suggest: (topic: string, skills: string[], role: string, language: 'hindi' | 'english' = 'english') =>
+    api.get('/youtube/suggest', {
+      params: { topic, skills: skills.join(','), role, language },
+    }),
+};
+
+export const learnApi = {
+  getContent: (title: string, type: string, role: string) =>
+    api.get('/learn/content', { params: { title, type, role } }),
+  getQuiz: (title: string, role: string) =>
+    api.post('/learn/quiz', { title, role }),
+};
+
+

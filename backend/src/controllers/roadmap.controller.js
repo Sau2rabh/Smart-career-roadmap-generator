@@ -32,9 +32,18 @@ const generate = async (req, res, next) => {
       data: { roadmap },
     });
   } catch (error) {
+    // Handle Gemini quota / rate-limit errors clearly
+    if (
+      error?.status === 429 ||
+      error?.message?.includes('RESOURCE_EXHAUSTED') ||
+      error?.message?.includes('quota')
+    ) {
+      return next(new AppError('AI quota exceeded. Please wait a minute and try again.', 429));
+    }
     next(error);
   }
 };
+
 
 // @desc  Get active roadmap
 // @route GET /api/roadmap
