@@ -47,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (token: string, userData: User) => {
     localStorage.setItem('accessToken', token);
+    // Set a cookie so the Next.js middleware can see it
+    document.cookie = `accessToken=${token}; path=/; max-age=${15 * 60}; SameSite=Lax; Secure`;
     setUser(userData);
   };
 

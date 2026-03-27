@@ -17,16 +17,20 @@ const generateTokens = (userId) => {
 
 const setCookies = (res, accessToken, refreshToken) => {
   const isProd = process.env.NODE_ENV === 'production';
-  res.cookie('accessToken', accessToken, {
+  
+  // For cross-domain cookies (Vercel <-> Render), we MUST use sameSite: 'none' and secure: true
+  const cookieOptions = {
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'strict' : 'lax',
+    secure: isProd, // Must be true for sameSite: 'none'
+    sameSite: isProd ? 'none' : 'lax', 
+  };
+
+  res.cookie('accessToken', accessToken, {
+    ...cookieOptions,
     maxAge: 15 * 60 * 1000,
   });
   res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'strict' : 'lax',
+    ...cookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
