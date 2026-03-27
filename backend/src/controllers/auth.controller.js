@@ -1,7 +1,9 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const Progress = require('../models/Progress');
 const { AppError } = require('../middleware/errorHandler');
+const { sendOtpEmail } = require('../services/email.service');
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -19,33 +21,122 @@ const setCookies = (res, accessToken, refreshToken) => {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'strict' : 'lax',
-    maxAge: 15 * 60 * 1000, // 15 min
+    maxAge: 15 * 60 * 1000,
   });
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'strict' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
 
-// @desc  Register new user
+/** Generate a 6-digit OTP */
+const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
+// @desc  Send OTP for signup or forgot_password
+// @route POST /api/auth/send-otp
+const sendOtp = async (req, res, next) => {
+  try {
+    const { email, purpose } = req.body; // purpose: 'signup' | 'forgot_password'
+    if (!email || !purpose) throw new AppError('Email and purpose are required', 400);
+
+    if (purpose === 'signup') {
+      // Check if already registered
+      const existing = await User.findOne({ email });
+      if (existing && existing.isEmailVerified) {
+        throw new AppError('Email already registered. Please log in.', 409);
+      }
+
+      const otp = generateOtp();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      // Upsert a placeholder user (or update temp OTP fields)
+      await User.findOneAndUpdate(
+        { email },
+        { otp, otpExpires, otpPurpose: 'signup', isEmailVerified: false },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+
+      await sendOtpEmail(email, otp, 'signup');
+    } else if (purpose === 'forgot_password') {
+      const user = await User.findOne({ email });
+      if (!user) throw new AppError('No account found with this email', 404);
+
+      const otp = generateOtp();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+      user.otp = otp;
+      user.otpExpires = otpExpires;
+      user.otpPurpose = 'forgot_password';
+      await user.save({ validateBeforeSave: false });
+
+      await sendOtpEmail(email, otp, 'forgot_password');
+    } else {
+      throw new AppError('Invalid purpose', 400);
+    }
+
+    res.json({ success: true, message: 'OTP sent to your email' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc  Verify OTP
+// @route POST /api/auth/verify-otp
+const verifyOtp = async (req, res, next) => {
+  try {
+    const { email, otp, purpose } = req.body;
+    if (!email || !otp || !purpose) throw new AppError('Email, OTP and purpose are required', 400);
+
+    const user = await User.findOne({ email }).select('+otp +otpExpires +otpPurpose');
+    if (!user) throw new AppError('No account found with this email', 404);
+    if (user.otpPurpose !== purpose) throw new AppError('OTP purpose mismatch', 400);
+    if (!user.otp || !user.otpExpires) throw new AppError('No OTP found. Please request a new one.', 400);
+    if (new Date() > user.otpExpires) throw new AppError('OTP has expired. Please request a new one.', 400);
+    if (user.otp !== otp.trim()) throw new AppError('Invalid OTP. Please try again.', 400);
+
+    // Mark OTP as used
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    user.otpPurpose = undefined;
+
+    if (purpose === 'signup') {
+      user.isEmailVerified = true;
+    }
+
+    await user.save({ validateBeforeSave: false });
+
+    res.json({ success: true, message: 'OTP verified successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc  Register new user (after OTP verified)
 // @route POST /api/auth/signup
 const signup = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
-    const existing = await User.findOne({ email });
-    if (existing) throw new AppError('Email already registered. Please log in.', 409);
+    // Check OTP was verified
+    const user = await User.findOne({ email });
+    if (!user || !user.isEmailVerified) {
+      throw new AppError('Please verify your email with OTP first', 400);
+    }
+    if (user.name && user.password) {
+      throw new AppError('Email already registered. Please log in.', 409);
+    }
 
-    const user = await User.create({ name, email, password });
+    // Update user with name and password
+    user.name = name;
+    user.password = password;
+    await user.save();
 
-    // Create initial progress record
     await Progress.create({ userId: user._id });
 
     const { accessToken, refreshToken } = generateTokens(user._id);
     await User.findByIdAndUpdate(user._id, { refreshToken });
-
     setCookies(res, accessToken, refreshToken);
 
     res.status(201).json({
@@ -53,6 +144,25 @@ const signup = async (req, res, next) => {
       message: 'Account created successfully',
       data: { user, accessToken },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc  Reset password after OTP verified for forgot_password
+// @route POST /api/auth/reset-password
+const resetPassword = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) throw new AppError('Email and new password are required', 400);
+
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) throw new AppError('No account found with this email', 404);
+
+    user.password = password;
+    await user.save();
+
+    res.json({ success: true, message: 'Password reset successfully. Please log in.' });
   } catch (error) {
     next(error);
   }
@@ -71,7 +181,6 @@ const login = async (req, res, next) => {
 
     const { accessToken, refreshToken } = generateTokens(user._id);
     await User.findByIdAndUpdate(user._id, { refreshToken });
-
     setCookies(res, accessToken, refreshToken);
 
     res.json({
@@ -100,7 +209,6 @@ const refresh = async (req, res, next) => {
 
     const { accessToken, refreshToken } = generateTokens(user._id);
     await User.findByIdAndUpdate(user._id, { refreshToken });
-
     setCookies(res, accessToken, refreshToken);
 
     res.json({ success: true, data: { accessToken } });
@@ -132,4 +240,4 @@ const logout = async (req, res, next) => {
   }
 };
 
-module.exports = { signup, login, refresh, getMe, logout };
+module.exports = { sendOtp, verifyOtp, signup, resetPassword, login, refresh, getMe, logout };

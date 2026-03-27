@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // output: 'export', // Removed for web support (enables middleware)
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;

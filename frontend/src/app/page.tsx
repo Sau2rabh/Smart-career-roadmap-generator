@@ -10,7 +10,8 @@ const features = [
   { icon: Zap, title: 'Skill Gap Analyzer', desc: 'Upload your resume and discover exactly what you\'re missing', color: 'text-yellow-500' },
   { icon: MessageSquare, title: 'Career Mentor Chat', desc: 'Context-aware AI mentor that knows your goals and skills', color: 'text-blue-500' },
   { icon: TrendingUp, title: 'Progress Tracker', desc: 'XP system, streaks, badges, and activity heatmap', color: 'text-green-500' },
-  { icon: FileText, title: 'Resume Builder', desc: 'AI-optimized resumes with ATS scoring', color: 'text-orange-500' },
+  { icon: Sparkles, title: 'Resume Optimization', desc: 'AI-optimized resumes with ATS scoring', color: 'text-orange-500' },
+  { icon: FileText, title: 'Resume Builder', desc: 'Build professional resumes from scratch', color: 'text-purple-500' },
   { icon: Mic, title: 'Mock Interviews', desc: 'AI-powered Q&A with instant graded feedback', color: 'text-pink-500' },
 ];
 

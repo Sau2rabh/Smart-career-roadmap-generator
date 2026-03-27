@@ -1,11 +1,14 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+    'Bypass-Tunnel-Reminder': 'true'
+  },
 });
 
 // Attach access token from localStorage if available
@@ -47,7 +50,10 @@ export default api;
 
 // ─── Typed API helpers ─────────────────────────────────────────────────────────
 export const authApi = {
+  sendOtp: (data: { email: string; purpose: 'signup' | 'forgot_password' }) => api.post('/auth/send-otp', data),
+  verifyOtp: (data: { email: string; otp: string; purpose: 'signup' | 'forgot_password' }) => api.post('/auth/verify-otp', data),
   signup: (data: { name: string; email: string; password: string }) => api.post('/auth/signup', data),
+  resetPassword: (data: { email: string; password: string }) => api.post('/auth/reset-password', data),
   login: (data: { email: string; password: string }) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
   getMe: () => api.get('/auth/me'),
@@ -86,16 +92,18 @@ export const progressApi = {
 
 export const projectsApi = {
   getRecommendations: () => api.get('/projects/recommendations'),
+  getGuide: (data: { projectTitle: string; projectDescription: string }) => api.post('/projects/guide', data),
 };
 
 export const resumeApi = {
   get: () => api.get('/resume'),
   optimize: (data: { resumeText: string; targetRole?: string }) => api.post('/resume/optimize', data),
+  upload: (formData: FormData) => api.post('/resume/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 export const interviewApi = {
   generate: (data: { targetRole: string; difficulty: string }) => api.post('/interview/generate', data),
-  submitAnswer: (data: { interviewId: string; questionId: string; answer: string }) =>
+  submitAnswer: (data: { interviewId: string; questionId: string; answer: string; metadata?: any }) =>
     api.post('/interview/answer', data),
   getHistory: () => api.get('/interview/history'),
 };

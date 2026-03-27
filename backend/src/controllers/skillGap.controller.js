@@ -1,5 +1,5 @@
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const Profile = require('../models/Profile');
 const { analyzeSkillGap } = require('../services/ai.service');
 const { AppError } = require('../middleware/errorHandler');
@@ -29,7 +29,8 @@ const analyze = async (req, res, next) => {
       if (!profile) throw new AppError('Complete your profile first', 400);
 
       // Parse PDF
-      const parsed = await pdfParse(req.file.buffer);
+      const parser = new PDFParse({ data: req.file.buffer });
+      const parsed = await parser.getText();
       const resumeText = parsed.text;
 
       if (!resumeText || resumeText.trim().length < 50) {

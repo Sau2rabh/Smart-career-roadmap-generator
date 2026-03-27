@@ -31,7 +31,7 @@ const generate = async (req, res, next) => {
 // @route POST /api/interview/answer
 const submitAnswer = async (req, res, next) => {
   try {
-    const { interviewId, questionId, answer } = req.body;
+    const { interviewId, questionId, answer, metadata } = req.body;
 
     const interview = await MockInterview.findOne({ _id: interviewId, userId: req.user._id });
     if (!interview) throw new AppError('Interview not found', 404);
@@ -39,7 +39,7 @@ const submitAnswer = async (req, res, next) => {
     const question = interview.questions.find((q) => q.id === questionId);
     if (!question) throw new AppError('Question not found', 404);
 
-    const feedback = await gradeInterviewAnswer(question.question, answer, interview.targetRole);
+    const feedback = await gradeInterviewAnswer(question.question, answer, interview.targetRole, metadata);
 
     // Upsert answer
     const existingIdx = interview.answers.findIndex((a) => a.questionId === questionId);
@@ -48,6 +48,11 @@ const submitAnswer = async (req, res, next) => {
       userAnswer: answer,
       aiFeedback: feedback.feedback,
       score: feedback.score,
+      strengths: feedback.strengths || [],
+      weaknesses: feedback.weaknesses || [],
+      improvements: feedback.improvements || [],
+      analyticalFeedback: feedback.analyticalFeedback || '',
+      sampleAnswer: feedback.sampleAnswer || '',
       submittedAt: new Date(),
     };
 

@@ -22,10 +22,23 @@ export default function SkillGapPage() {
       const form = new FormData();
       form.append('resume', file);
       const res = await skillGapApi.analyzePdf(form);
-      setAnalysis(res.data.data.analysis);
+      const data = res.data.data.analysis;
+
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid analysis format received from AI');
+      }
+
+      setAnalysis({
+        matchScore: data.matchScore || 0,
+        estimatedTimeToReady: data.estimatedTimeToReady || 'Unknown',
+        strengths: data.strengths || [],
+        missingSkills: data.missingSkills || [],
+        extractedSkills: data.extractedSkills || [],
+        recommendations: data.recommendations || []
+      });
       toast.success('Analysis complete! 🎉');
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Analysis failed');
+      toast.error(err?.response?.data?.message || err?.message || 'Analysis failed');
     } finally { setLoading(false); }
   };
 
@@ -116,7 +129,14 @@ export default function SkillGapPage() {
                   <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
                     <div>
                       <p className="font-medium text-sm">{skill.name}</p>
-                      {skill.learningResources?.[0] && <a href={skill.learningResources[0]} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-600 dark:text-purple-400 hover:underline">Start learning →</a>}
+                      <a 
+                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(skill.name + ' tutorial in Hindi')}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 mt-1"
+                      >
+                        Start learning on YouTube →
+                      </a>
                     </div>
                     <Badge className={`text-xs ${importanceColors[skill.importance]}`}>{skill.importance?.replace('_', ' ')}</Badge>
                   </div>

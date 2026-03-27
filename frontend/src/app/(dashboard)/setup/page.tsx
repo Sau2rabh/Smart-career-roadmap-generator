@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { profileApi, roadmapApi } from '@/lib/api';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Plus, X, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
+import { Loader2, Plus, X, ChevronRight, ChevronLeft, Sparkles, Edit2, User, BookOpen, Clock, Briefcase } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const steps = ['Education & Experience', 'Current Skills', 'Target Role & Goals', 'Review & Generate'];
@@ -29,6 +29,8 @@ export default function SetupPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [newSkill, setNewSkill] = useState('');
   const [form, setForm] = useState({
     targetRole: '',
@@ -40,6 +42,36 @@ export default function SetupPage() {
     education: { level: 'bachelor', field: '', institution: '' },
     bio: '',
   });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await profileApi.get();
+      if (res.data.data) {
+        const p = res.data.data;
+        setForm({
+          targetRole: p.targetRole || '',
+          experienceLevel: p.experienceLevel || 'entry',
+          currentSkills: p.currentSkills || [],
+          timeCommitmentHoursPerWeek: p.timeCommitmentHoursPerWeek || 10,
+          yearsOfExperience: p.yearsOfExperience || 0,
+          preferredLearningStyle: p.preferredLearningStyle || 'mixed',
+          education: p.education || { level: 'bachelor', field: '', institution: '' },
+          bio: p.bio || '',
+        });
+        setIsEditing(false);
+      } else {
+        setIsEditing(true);
+      }
+    } catch (err) {
+      setIsEditing(true);
+    } finally {
+      setInitialLoading(false);
+    }
+  };
 
   const addSkill = (name: string) => {
     if (!name.trim() || form.currentSkills.find((s) => s.name.toLowerCase() === name.toLowerCase())) return;
@@ -60,71 +92,176 @@ export default function SetupPage() {
     setLoading(true);
     try {
       await profileApi.upsert(form);
-      toast.success('Profile saved! Generating your roadmap...');
-      await roadmapApi.generate();
+      toast.success('Profile saved!');
       await refreshUser();
-      toast.success('Roadmap generated! 🚀');
-      router.push('/roadmap');
+      setIsEditing(false);
+      if (step === 3) {
+        toast.loading('Generating your personal roadmap...');
+        await roadmapApi.generate();
+        toast.dismiss();
+        toast.success('Roadmap updated! 🚀');
+        router.push('/roadmap');
+      }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Setup failed');
+      toast.error(err?.response?.data?.message || 'Update failed');
     } finally { setLoading(false); }
   };
 
+  if (initialLoading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+      <p className="text-muted-foreground animate-pulse">Loading your profile...</p>
+    </div>
+  );
+
+  // VIEW MODE
+  if (!isEditing) {
+    return (
+      <div className="w-full max-w-4xl mx-auto space-y-6 px-4 py-2">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="page-header text-xl sm:text-2xl text-foreground">Your Career Profile</h2>
+          <Button onClick={() => { setIsEditing(true); setStep(0); }} className="rounded-xl gap-2 bg-purple-600 hover:bg-purple-700 text-white shrink-0">
+            <Edit2 className="w-4 h-4" /> <span className="hidden sm:inline">Edit Profile</span>
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Main Info */}
+          <Card className="md:col-span-2 glass-card border-0 overflow-hidden">
+            <CardContent className="pt-6 space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                  <User className="w-6 h-6 text-purple-500" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-xl font-bold text-foreground truncate">{form.targetRole}</h3>
+                  <p className="text-muted-foreground flex items-center gap-2 mt-1 text-sm">
+                    <Briefcase className="w-4 h-4 shrink-0" /> {form.experienceLevel.charAt(0).toUpperCase() + form.experienceLevel.slice(1)} • {form.yearsOfExperience}y Experience
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-2 uppercase tracking-wider">
+                  <BookOpen className="w-4 h-4" /> Education
+                </h4>
+                <div className="p-4 rounded-2xl bg-muted/30 border border-border">
+                  <p className="text-foreground font-medium">{form.education.level.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
+                  <p className="text-sm text-muted-foreground">{form.education.field || 'General Studies'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2 uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4" /> Current Skills
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {form.currentSkills.map((s) => (
+                    <Badge key={s.name} variant="secondary" className="px-3 py-1 bg-muted/50 border-0 text-foreground transition-colors hover:bg-muted font-medium">
+                      {s.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Side Info */}
+          <div className="space-y-6">
+            <Card className="glass-card border-0">
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Weekly Commitment</p>
+                  <div className="flex items-center gap-2 text-foreground">
+                    <Clock className="w-4 h-4 text-purple-500" />
+                    <span className="text-lg font-bold">{form.timeCommitmentHoursPerWeek}h / week</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Learning Style</p>
+                  <div className="inline-flex px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium border border-blue-500/20">
+                    {form.preferredLearningStyle.charAt(0).toUpperCase() + form.preferredLearningStyle.slice(1)}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button onClick={() => router.push('/roadmap')} variant="outline" className="w-full rounded-xl gap-2 border-primary/20 text-primary hover:bg-primary/5">
+              View Your Roadmap <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // EDIT MODE (Original Form)
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto px-4 py-2">
       {/* Progress */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="page-header">Profile Setup</h2>
-          <span className="text-sm text-muted-foreground">{step + 1} / {steps.length}</span>
+        <div className="flex items-center justify-between mb-2 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <h2 className="page-header text-lg sm:text-xl truncate text-foreground">Update Profile</h2>
+            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="text-[10px] h-7 px-2 text-muted-foreground hover:text-foreground shrink-0">Cancel</Button>
+          </div>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">{step + 1} / {steps.length}</span>
         </div>
         <Progress value={((step + 1) / steps.length) * 100} className="h-2" />
-        <div className="flex justify-between mt-2">
+        <div className="flex gap-4 mt-2 overflow-x-auto no-scrollbar pb-2">
           {steps.map((s, i) => (
-            <span key={i} className={`text-xs ${i <= step ? 'text-purple-600 dark:text-purple-400 font-medium' : 'text-muted-foreground'}`}>{s}</span>
+            <span key={i} className={`text-[10px] whitespace-nowrap ${i <= step ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-muted-foreground'}`}>{s}</span>
           ))}
         </div>
       </div>
 
       <AnimatePresence mode="wait">
-        <motion.div key={step} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>
+        <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
           <Card className="glass-card border-0">
-            <CardHeader><CardTitle className="text-lg">{steps[step]}</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base sm:text-lg text-foreground">{steps[step]}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {step === 0 && (
                 <>
-                  <div className="space-y-1.5">
-                    <Label>Experience Level</Label>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Experience Level</Label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {expLevels.map(({ value, label, desc }) => (
                         <button key={value} onClick={() => setForm({ ...form, experienceLevel: value })}
-                          className={`p-3 rounded-xl text-left text-sm transition-all border ${form.experienceLevel === value ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'border-border hover:border-purple-300'}`}>
-                          <p className="font-medium">{label}</p>
-                          <p className="text-xs text-muted-foreground">{desc}</p>
+                          className={`p-3 rounded-xl text-left transition-all border ${form.experienceLevel === value ? 'border-purple-500 bg-purple-500/5 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 ring-1 ring-purple-500/20' : 'border-border hover:border-purple-300'}`}>
+                          <p className="font-bold text-sm">{label}</p>
+                          <p className="text-[10px] text-muted-foreground font-medium">{desc}</p>
                         </button>
                       ))}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label>Years of Experience</Label>
+                      <Label className="text-xs">Years of Experience</Label>
                       <Input type="number" min={0} max={50} value={form.yearsOfExperience}
-                        onChange={(e) => setForm({ ...form, yearsOfExperience: +e.target.value })} className="h-10" />
+                        onChange={(e) => setForm({ ...form, yearsOfExperience: +e.target.value })} className="h-10 text-foreground bg-muted/30" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Education Level</Label>
-                      <select value={form.education.level} onChange={(e) => setForm({ ...form, education: { ...form.education, level: e.target.value } })}
-                        className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                        {['high_school', 'associate', 'bachelor', 'master', 'phd', 'self_taught', 'bootcamp'].map((l) => (
-                          <option key={l} value={l}>{l.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</option>
-                        ))}
-                      </select>
+                      <Label className="text-xs">Education Level</Label>
+                      <div className="relative">
+                        <select
+                          value={form.education.level}
+                          onChange={(e) => setForm({ ...form, education: { ...form.education, level: e.target.value } })}
+                          className="w-full h-10 px-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
+                        >
+                          {['high_school', 'associate', 'bachelor', 'master', 'phd', 'self_taught', 'bootcamp'].map((l) => (
+                            <option key={l} value={l} className="bg-background text-foreground">
+                              {l.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rotate-90 text-muted-foreground pointer-events-none" />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Field of Study</Label>
+                    <Label className="text-xs">Field of Study</Label>
                     <Input placeholder="e.g. Computer Science" value={form.education.field}
-                      onChange={(e) => setForm({ ...form, education: { ...form.education, field: e.target.value } })} className="h-10" />
+                      onChange={(e) => setForm({ ...form, education: { ...form.education, field: e.target.value } })} className="h-10 text-foreground bg-muted/30" />
                   </div>
                 </>
               )}
@@ -132,25 +269,25 @@ export default function SetupPage() {
               {step === 1 && (
                 <>
                   <div className="space-y-1.5">
-                    <Label>Add Skills</Label>
+                    <Label className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Add Skills</Label>
                     <div className="flex gap-2">
                       <Input placeholder="Type a skill..." value={newSkill} onChange={(e) => setNewSkill(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && addSkill(newSkill)} className="h-10" />
-                      <Button onClick={() => addSkill(newSkill)} variant="outline" size="icon" className="h-10 w-10 rounded-xl"><Plus className="w-4 h-4" /></Button>
+                        onKeyDown={(e) => e.key === 'Enter' && addSkill(newSkill)} className="h-10 text-foreground bg-muted/30" />
+                      <Button onClick={() => addSkill(newSkill)} variant="outline" size="icon" className="h-10 w-10 rounded-xl shrink-0"><Plus className="w-4 h-4" /></Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">Quick add:</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">Quick add:</p>
                     <div className="flex flex-wrap gap-1.5">
                       {commonSkills.filter((s) => !form.currentSkills.find((cs) => cs.name === s)).map((s) => (
-                        <button key={s} onClick={() => addSkill(s)} className="text-xs px-2.5 py-1 bg-muted rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 transition-colors">{s}</button>
+                        <button key={s} onClick={() => addSkill(s)} className="text-[10px] px-2.5 py-1 bg-muted rounded-full hover:bg-purple-500/10 hover:text-purple-500 border border-transparent hover:border-purple-500/20 transition-all font-medium">{s}</button>
                       ))}
                     </div>
                   </div>
                   {form.currentSkills.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 pt-2">
                       {form.currentSkills.map(({ name, level }) => (
-                        <Badge key={name} variant="secondary" className="gap-1 pl-3 pr-1 py-1">
+                        <Badge key={name} variant="secondary" className="gap-1 pl-3 pr-1 py-1 rounded-full text-foreground bg-muted hover:bg-muted/80 border-0 shadow-sm">
                           {name}
-                          <button onClick={() => removeSkill(name)} className="ml-1 hover:text-destructive"><X className="w-3 h-3" /></button>
+                          <button onClick={() => removeSkill(name)} className="ml-1 p-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
                         </Badge>
                       ))}
                     </div>
@@ -161,23 +298,26 @@ export default function SetupPage() {
               {step === 2 && (
                 <>
                   <div className="space-y-1.5">
-                    <Label>Target Role *</Label>
+                    <Label className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Target Role *</Label>
                     <Input placeholder="e.g. Full Stack Developer, ML Engineer..." value={form.targetRole}
-                      onChange={(e) => setForm({ ...form, targetRole: e.target.value })} className="h-11" />
+                      onChange={(e) => setForm({ ...form, targetRole: e.target.value })} className="h-11 text-foreground bg-muted/30" />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label>Hours per week you can dedicate: <span className="text-purple-600 font-bold">{form.timeCommitmentHoursPerWeek}h</span></Label>
+                  <div className="space-y-4">
+                    <Label className="text-xs flex justify-between items-center text-muted-foreground">
+                      <span>Weekly Hours Commitment</span>
+                      <span className="text-purple-600 dark:text-purple-400 font-bold text-base">{form.timeCommitmentHoursPerWeek}h</span>
+                    </Label>
                     <input type="range" min={1} max={60} value={form.timeCommitmentHoursPerWeek}
                       onChange={(e) => setForm({ ...form, timeCommitmentHoursPerWeek: +e.target.value })}
-                      className="w-full accent-purple-600" />
-                    <div className="flex justify-between text-xs text-muted-foreground"><span>1h</span><span>60h</span></div>
+                      className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-purple-600" />
+                    <div className="flex justify-between text-[10px] text-muted-foreground font-bold italic"><span>1 HOUR</span><span>60 HOURS</span></div>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label>Preferred Learning Style</Label>
+                  <div className="space-y-1.5 pt-2">
+                    <Label className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Preferred Learning Style</Label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {[{ v: 'video', l: '🎥 Video' }, { v: 'reading', l: '📚 Reading' }, { v: 'hands_on', l: '🛠 Hands-On' }, { v: 'mixed', l: '🔀 Mixed' }].map(({ v, l }) => (
                         <button key={v} onClick={() => setForm({ ...form, preferredLearningStyle: v })}
-                          className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${form.preferredLearningStyle === v ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'border-border hover:border-purple-300'}`}>
+                          className={`py-2 px-3 rounded-xl text-[10px] sm:text-xs font-bold border transition-all ${form.preferredLearningStyle === v ? 'border-purple-500 bg-purple-500/5 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 ring-1 ring-purple-500/20' : 'border-border hover:border-purple-300 text-muted-foreground'}`}>
                           {l}
                         </button>
                       ))}
@@ -188,21 +328,20 @@ export default function SetupPage() {
 
               {step === 3 && (
                 <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-muted/50 space-y-2">
-                    <p className="text-sm"><span className="font-medium">Target Role:</span> {form.targetRole || '—'}</p>
-                    <p className="text-sm"><span className="font-medium">Experience:</span> {form.experienceLevel} · {form.yearsOfExperience} years</p>
-                    <p className="text-sm"><span className="font-medium">Weekly commitment:</span> {form.timeCommitmentHoursPerWeek} hours</p>
-                    <p className="text-sm"><span className="font-medium">Learning style:</span> {form.preferredLearningStyle}</p>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {form.currentSkills.map((s) => <Badge key={s.name} variant="secondary" className="text-xs">{s.name}</Badge>)}
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-2 shadow-inner">
+                    <p className="text-sm flex justify-between"><span className="text-muted-foreground">Target Role:</span> <span className="font-bold text-foreground">{form.targetRole || '—'}</span></p>
+                    <p className="text-sm flex justify-between"><span className="text-muted-foreground">Experience:</span> <span className="font-bold text-foreground">{form.experienceLevel} · {form.yearsOfExperience}y</span></p>
+                    <p className="text-sm flex justify-between"><span className="text-muted-foreground">Commitment:</span> <span className="font-bold text-foreground">{form.timeCommitmentHoursPerWeek}h / week</span></p>
+                    <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border">
+                      {form.currentSkills.map((s) => <Badge key={s.name} variant="secondary" className="text-[10px] py-0">{s.name}</Badge>)}
                     </div>
                   </div>
-                  <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                  <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 shadow-sm shadow-purple-500/5">
                     <div className="flex items-start gap-3">
-                      <Sparkles className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                      <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
                       <div className="text-sm">
-                        <p className="font-semibold text-purple-700 dark:text-purple-300">Ready to generate your roadmap!</p>
-                        <p className="text-purple-600 dark:text-purple-400 text-xs mt-1">AI will analyze your profile and create a personalized {form.timeCommitmentHoursPerWeek >= 20 ? '3-6' : '6-12'} month career roadmap.</p>
+                        <p className="font-bold text-purple-700 dark:text-purple-300">Ready to update your roadmap!</p>
+                        <p className="text-muted-foreground text-xs mt-1 leading-relaxed">Changes will be used to intelligently personalize your career journey.</p>
                       </div>
                     </div>
                   </div>
@@ -214,18 +353,18 @@ export default function SetupPage() {
       </AnimatePresence>
 
       {/* Nav buttons */}
-      <div className="flex justify-between mt-6">
-        <Button variant="outline" onClick={prev} disabled={step === 0} className="rounded-xl gap-2">
+      <div className="flex justify-between mt-6 gap-4">
+        <Button variant="outline" onClick={prev} disabled={step === 0} className="rounded-xl gap-2 flex-1 sm:flex-none h-11 border-primary/20 hover:bg-muted transition-colors">
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
         {step < steps.length - 1 ? (
-          <Button onClick={next} className="rounded-xl gap-2 bg-purple-600 hover:bg-purple-700 text-white">
+          <Button onClick={next} className="rounded-xl gap-2 bg-purple-600 hover:bg-purple-700 text-white flex-1 sm:flex-none h-11 shadow-lg shadow-purple-600/20 active:scale-95 transition-transform">
             Next <ChevronRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button onClick={submit} disabled={loading} className="rounded-xl gap-2 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white shadow-lg">
+          <Button onClick={submit} disabled={loading} className="rounded-xl gap-2 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white flex-1 sm:flex-none h-11 shadow-lg shadow-purple-600/20 active:scale-95 transition-transform">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {loading ? 'Generating roadmap...' : 'Generate My Roadmap'}
+            {loading ? 'Saving...' : 'Save & Update'}
           </Button>
         )}
       </div>

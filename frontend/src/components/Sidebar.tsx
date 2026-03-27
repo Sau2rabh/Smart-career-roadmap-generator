@@ -16,7 +16,8 @@ const navItems = [
   { href: '/mentor', label: 'AI Mentor', icon: MessageSquare },
   { href: '/projects', label: 'Projects', icon: FolderGit2 },
   { href: '/progress', label: 'Progress', icon: TrendingUp },
-  { href: '/resume', label: 'Resume Builder', icon: FileText },
+  { href: '/resume', label: 'Resume Optimization', icon: Sparkles },
+  { href: '/resume-builder', label: 'Resume Builder', icon: FileText },
   { href: '/interview', label: 'Mock Interview', icon: Mic },
   { href: '/setup', label: 'Profile Setup', icon: User },
 ];

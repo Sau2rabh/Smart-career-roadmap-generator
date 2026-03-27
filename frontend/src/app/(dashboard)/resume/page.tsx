@@ -1,32 +1,70 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { resumeApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, Save, Copy } from 'lucide-react';
+import { Loader2, Sparkles, Save, Copy, Upload, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ResumePage() {
   const [resumeText, setResumeText] = useState('');
   const [optimized, setOptimized] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     resumeApi.get().then((r) => setResumeText(r.data.data.resumeText || '')).finally(() => setInitialLoad(false));
   }, []);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF file');
+      return;
+    }
+
+    setUploading(true);
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('resume', file);
+
+    try {
+      const res = await resumeApi.upload(formData);
+      const { result, extractedText } = res.data.data;
+      
+      setResumeText(extractedText);
+      setOptimized(result);
+      toast.success('Resume uploaded, extracted, and optimized! 🚀');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const optimize = async () => {
     if (!resumeText.trim()) { toast.error('Please paste your resume text'); return; }
     setLoading(true);
     try {
       const res = await resumeApi.optimize({ resumeText });
-      setOptimized(res.data.data.result);
+      const result = res.data.data.result;
+      
+      if (!result || typeof result !== 'object') {
+        throw new Error('Invalid response format from AI');
+      }
+      
+      setOptimized(result);
       toast.success('Resume optimized! 🎉');
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Optimization failed');
+      toast.error(err?.response?.data?.message || err?.message || 'Optimization failed');
     } finally { setLoading(false); }
   };
 
@@ -40,26 +78,47 @@ export default function ResumePage() {
   return (
     <div className="space-y-6 max-w-6xl">
       <div>
-        <h2 className="page-header">Resume Builder</h2>
-        <p className="page-subtitle">Paste your resume, and AI will optimize it for your target role</p>
+        <h2 className="page-header">Resume Optimization</h2>
+        <p className="page-subtitle">Paste your resume content or upload a PDF to optimize it with AI</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Input */}
         <Card className="glass-card border-0">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Your Resume</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base uppercase tracking-wider opacity-70">Your Resume</CardTitle>
+              <div className="flex gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  accept=".pdf"
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || loading}
+                  className="rounded-xl gap-2 border-purple-500/20 hover:bg-purple-500/10 text-xs h-8"
+                >
+                  {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  {uploading ? 'Uploading...' : 'Upload PDF'}
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <textarea
-              className="w-full h-96 p-3 text-sm bg-muted/50 border border-border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono"
+              className="w-full h-96 p-3 text-sm bg-muted/20 border border-border/50 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 font-mono scrollbar-thin"
               placeholder="Paste your resume text here..."
               value={resumeText}
               onChange={(e) => setResumeText(e.target.value)}
             />
-            <Button onClick={optimize} disabled={loading} className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white rounded-xl gap-2">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {loading ? 'Optimizing with AI...' : 'Optimize with AI'}
+            <Button onClick={optimize} disabled={loading} className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white rounded-xl gap-2 shadow-lg shadow-purple-500/20">
+              {loading && !uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {loading && !uploading ? 'Optimizing with AI...' : 'Optimize with AI'}
             </Button>
           </CardContent>
         </Card>
@@ -71,7 +130,9 @@ export default function ResumePage() {
               <CardTitle className="text-base">Optimized Resume</CardTitle>
               {optimized && (
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">ATS Score: {optimized.atsScore}%</Badge>
+                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                    ATS Score: {optimized.atsScore ?? 'N/A'}%
+                  </Badge>
                   <Button variant="ghost" size="icon" onClick={copyToClipboard} className="rounded-xl h-8 w-8"><Copy className="w-4 h-4" /></Button>
                 </div>
               )}
@@ -89,7 +150,7 @@ export default function ResumePage() {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                 <textarea
                   className="w-full h-72 p-3 text-sm bg-muted/50 border border-border rounded-xl resize-none focus:outline-none font-mono"
-                  value={optimized.optimizedResume}
+                  value={optimized.optimizedResume || ''}
                   readOnly
                 />
                 {optimized.keywordsAdded?.length > 0 && (
@@ -97,7 +158,7 @@ export default function ResumePage() {
                     <p className="text-xs font-semibold text-muted-foreground mb-2">Keywords Added</p>
                     <div className="flex flex-wrap gap-1.5">
                       {optimized.keywordsAdded.map((kw: string) => (
-                        <Badge key={kw} className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-xs">{kw}</Badge>
+                        <Badge key={kw} className="bg-purple-100 text-purple-700 dark:bg-purple-900/41 dark:text-purple-300 text-xs">{kw}</Badge>
                       ))}
                     </div>
                   </div>
