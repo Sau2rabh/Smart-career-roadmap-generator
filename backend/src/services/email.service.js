@@ -7,6 +7,12 @@ const hasResendKey = () => {
   return key.length > 0 && key !== 'your-resend-api-key';
 };
 
+/** Check if Google Apps Script URL is configured */
+const hasGoogleScript = () => {
+  const url = process.env.GOOGLE_SCRIPT_URL || '';
+  return url.length > 0 && url.startsWith('https://script.google.com');
+};
+
 /** Check if real Gmail SMTP credentials are configured */
 const hasGmailCredentials = () => {
   const user = process.env.EMAIL_USER || '';
@@ -79,7 +85,31 @@ const sendOtpEmail = async (to, otp, purpose = 'signup') => {
 
   const html = getEmailTemplate(otp, purpose);
 
-  // ─── Option 1: Resend API (recommended for production) ───────────────────────
+  // ─── Option 1: Google Apps Script (highest priority for domain-less setup) ──
+  if (hasGoogleScript()) {
+    try {
+      const response = await fetch(process.env.GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: to,
+          subject: subjectMap[purpose],
+          html: html,
+        }),
+      });
+
+      if (response.ok) {
+        console.log('✅ OTP sent via Google Script to ' + to);
+        return;
+      } else {
+        console.error('⚠️ Google Script error status:', response.status);
+      }
+    } catch (err) {
+      console.error('⚠️ Google Script failed:', err.message);
+    }
+  }
+
+  // ─── Option 2: Resend API (recommended for production with domain) ───────────
   if (hasResendKey()) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
@@ -97,7 +127,7 @@ const sendOtpEmail = async (to, otp, purpose = 'signup') => {
     }
   }
 
-  // ─── Option 2: Gmail SMTP ─────────────────────────────────────────────────
+  // ─── Option 3: Gmail SMTP ─────────────────────────────────────────────────
   if (hasGmailCredentials()) {
     try {
       const transporter = nodemailer.createTransport({
