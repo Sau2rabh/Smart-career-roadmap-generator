@@ -15,8 +15,8 @@ const connectDB = async () => {
       retries++;
       console.error(`❌ MongoDB connection failed (attempt ${retries}/${maxRetries}):`, error.message);
       if (retries === maxRetries) {
-        console.error('Max retries reached. Exiting...');
-        process.exit(1);
+        console.error('❌ Max retries reached. Database connection failed. Warning: API endpoints requiring DB will fail.');
+        return;
       }
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
