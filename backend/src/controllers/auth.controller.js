@@ -236,8 +236,17 @@ const getMe = async (req, res, next) => {
 const logout = async (req, res, next) => {
   try {
     await User.findByIdAndUpdate(req.user._id, { refreshToken: null });
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax', 
+    };
+
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+    
     res.json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
     next(error);

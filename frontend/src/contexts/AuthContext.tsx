@@ -57,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authApi.logout();
     } finally {
       localStorage.removeItem('accessToken');
+      // Clear the cookie that we set during login so middleware doesn't trigger
+      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
       setUser(null);
       window.location.href = '/login';
     }
