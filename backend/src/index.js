@@ -25,33 +25,18 @@ const learnRoutes = require('./routes/learn.routes');
 const app = express();
 
 // ─── Security & Initial Middleware ────────────────────────────────────────────
-// Note: CORS MUST be at the very top to attach headers even for blocked requests
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'https://smart-career-roadmap-generator.vercel.app',
-  process.env.CLIENT_URL,
-].filter(Boolean);
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`Blocked by CORS: ${origin}`);
-        callback(new Error('CORS Error: Origin not allowed'));
-      }
+    // Reflect the requesting origin to ensure credentials work without strict string matching issues.
+    origin: function(origin, callback) {
+      callback(null, origin || true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Bypass-Tunnel-Reminder'],
-    optionsSuccessStatus: 200, // Safe for preflight handling
+    optionsSuccessStatus: 200,
   })
 );
-
-// Explicitly handle preflight requests for all routes
-app.options('*', cors());
 
 // Other security headers and rate limiting
 app.use(helmet());
