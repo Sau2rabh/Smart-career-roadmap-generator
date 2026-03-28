@@ -24,11 +24,8 @@ const learnRoutes = require('./routes/learn.routes');
 
 const app = express();
 
-// ─── Connect to Database ──────────────────────────────────────────────────────
-connectDB();
-
-// ─── Security Middleware ──────────────────────────────────────────────────────
-app.use(helmet());
+// ─── Security & Initial Middleware ────────────────────────────────────────────
+// Note: CORS MUST be at the very top to attach headers even for blocked requests
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -38,27 +35,30 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      
-      // In development, allow localhost or specified origins
-      const isAllowed = allowedOrigins.includes(origin);
-      
-      if (isAllowed) {
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         console.warn(`Blocked by CORS: ${origin}`);
-        callback(new Error('Not allowed by CORS'), false);
+        callback(new Error('CORS Error: Origin not allowed'));
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Bypass-Tunnel-Reminder'],
-    optionsSuccessStatus: 204,
+    optionsSuccessStatus: 200, // Safe for preflight handling
   })
 );
+
+// Explicitly handle preflight requests for all routes
+app.options('*', cors());
+
+// Other security headers and rate limiting
+app.use(helmet());
 app.use(globalLimiter);
+
+// ─── Connect to Database ──────────────────────────────────────────────────────
+connectDB();
 
 // ─── General Middleware ───────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
