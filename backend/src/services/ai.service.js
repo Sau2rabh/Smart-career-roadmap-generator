@@ -17,7 +17,7 @@ const withRetry = async (fn, maxRetries = 3) => {
         err?.message?.includes('quota');
 
       if (isRateLimit && attempt < maxRetries) {
-        const waitMs = attempt * 5000;
+        const waitMs = attempt * 1500;
         console.log(`[AI] Rate limited. Retrying in ${waitMs / 1000}s... (attempt ${attempt}/${maxRetries})`);
         await new Promise((r) => setTimeout(r, waitMs));
       } else {

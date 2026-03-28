@@ -8,9 +8,17 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
+import LoadingProgress from '@/components/LoadingProgress';
 
 export default function SkillGapPage() {
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<{
+    matchScore: number;
+    estimatedTimeToReady: string;
+    strengths: string[];
+    missingSkills: { name: string; importance: string }[];
+    extractedSkills: { name: string; level: string }[];
+    recommendations: string[];
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -73,9 +81,8 @@ export default function SkillGapPage() {
           >
             <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={(e) => e.target.files?.[0] && analyze(e.target.files[0])} />
             {loading ? (
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-12 h-12 animate-spin text-purple-500" />
-                <p className="text-sm text-muted-foreground">Analyzing your resume with AI...</p>
+              <div className="py-4">
+                <LoadingProgress label="Analyzing your resume with AI..." isComplete={false} />
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">

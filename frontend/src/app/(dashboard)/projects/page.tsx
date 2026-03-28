@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { projectsApi } from '@/lib/api';
+import { ProjectRecommendation, ProjectGuide } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,22 +34,22 @@ const ProjectLoader = ({ onComplete, label, isComplete = false }: { onComplete: 
         if (isComplete) {
           if (prev >= 100) {
             clearInterval(interval);
-            setTimeout(onComplete, 500);
+            onComplete();
             return 100;
           }
-          return Math.min(prev + 10, 100); // Fast fill once data is back
+          return Math.min(prev + 20, 100); // Super fast snap once data is back
         }
 
         if (prev < 85) {
-          // Normal but steady climb
-          return prev + (Math.random() * 2 + 0.5);
+          // Faster, smoother climb
+          return prev + (Math.random() * 3 + 1);
         } else if (prev < 98) {
-          // "Wait Zone" - slow crawl while AI is processing
-          return prev + 0.2;
+          // Slow down but don't stall completely
+          return prev + 0.5;
         }
-        return prev; // Stay at 98% until isComplete is true
+        return prev;
       });
-    }, 300);
+    }, 80);
     return () => clearInterval(interval);
   }, [onComplete, isComplete]);
 
@@ -78,15 +79,15 @@ const ProjectLoader = ({ onComplete, label, isComplete = false }: { onComplete: 
 };
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<ProjectRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProjects, setShowProjects] = useState(false);
   const [guideLoading, setGuideLoading] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [selectedProject, setSelectedProject] = useState<ProjectRecommendation | null>(null);
   const [apiReady, setApiReady] = useState(false);
   const [guideApiReady, setGuideApiReady] = useState(false);
-  const [guide, setGuide] = useState<any>(null);
+  const [guide, setGuide] = useState<ProjectGuide | null>(null);
 
   const load = async () => {
     setLoading(true);

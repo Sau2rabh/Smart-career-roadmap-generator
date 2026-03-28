@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, Save, Copy, Upload, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
+import LoadingProgress from '@/components/LoadingProgress';
 
 export default function ResumePage() {
   const [resumeText, setResumeText] = useState('');
-  const [optimized, setOptimized] = useState<any>(null);
+  const [optimized, setOptimized] = useState<any>(null); // Keeping any here as the optimized structure is complex and defined in the component
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -141,10 +142,14 @@ export default function ResumePage() {
           <CardContent>
             {!optimized ? (
               <div className="h-96 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">AI-optimized version will appear here</p>
-                </div>
+                {loading && !uploading ? (
+                  <LoadingProgress label="Creating your optimized resume..." isComplete={false} />
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">AI-optimized version will appear here</p>
+                  </div>
+                )}
               </div>
             ) : (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">

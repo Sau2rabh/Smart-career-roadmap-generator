@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { Map, Zap, Trophy, Flame, ArrowRight, Sparkles, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Roadmap, Progress as UserProgress } from '@/types';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -25,8 +26,8 @@ const itemVariants = {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [roadmap, setRoadmap] = useState<any>(null);
-  const [progress, setProgress] = useState<any>(null);
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
+  const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export default function DashboardPage() {
 
   const xpToNextLevel = (progress?.level || 1) * 500;
   const xpProgress = ((progress?.xp || 0) % 500) / 5;
-  const activityData = (progress?.activityLog || []).slice(-7).map((a: any) => ({
+  const activityData = (progress?.activityLog || []).slice(-7).map((a) => ({
     date: new Date(a.date).toLocaleDateString('en', { weekday: 'short' }),
     xp: a.xpEarned,
     tasks: a.tasksCompleted,
@@ -131,7 +132,7 @@ export default function DashboardPage() {
             <CardHeader><CardTitle className="text-sm font-semibold">Weekly Activity (XP)</CardTitle></CardHeader>
             <CardContent>
               {activityData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={activityData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="date" tick={{ fontSize: 12 }} />
@@ -194,14 +195,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Badges */}
-      {progress?.badges?.length > 0 && (
+      {(progress?.badges?.length ?? 0) > 0 && (
         <motion.div variants={itemVariants}>
           <Card className="glass-card border-0">
             <CardHeader><CardTitle className="text-sm font-semibold">Your Badges</CardTitle></CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3">
-                {progress.badges.map((badge: any) => (
-                  <div key={badge.id} className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 rounded-xl px-3 py-2">
+                {progress?.badges?.map((badge) => (
+                  <div key={badge.id} className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 rounded-xl px-3 py-2 border border-purple-100 dark:border-purple-800/30 transition-all hover:scale-105">
                     <span className="text-xl">{badge.icon}</span>
                     <div>
                       <p className="text-xs font-semibold">{badge.name}</p>

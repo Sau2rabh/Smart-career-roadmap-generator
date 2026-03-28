@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { Roadmap, MonthlyPlan, Week, Task } from '@/types';
+import LoadingProgress from '@/components/LoadingProgress';
 
 interface VideoSuggestion {
   title: string;
@@ -26,7 +28,7 @@ interface VideoSuggestion {
 
 export default function RoadmapPage() {
   const router = useRouter();
-  const [roadmap, setRoadmap] = useState<any>(null);
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [openMonths, setOpenMonths] = useState<Record<number, boolean>>({ 0: true });
@@ -46,7 +48,7 @@ export default function RoadmapPage() {
 
   useEffect(() => { loadRoadmap(); }, []);
 
-  const toggleTask = async (monthIdx: number, weekIdx: number, taskIdx: number, task: any) => {
+  const toggleTask = async (monthIdx: number, weekIdx: number, taskIdx: number, task: Task) => {
     if (!roadmap) return;
     try {
       const res = await roadmapApi.completeTask(roadmap._id, task.id, { monthIndex: monthIdx, weekIndex: weekIdx, taskIndex: taskIdx });
@@ -74,12 +76,12 @@ export default function RoadmapPage() {
     } finally { setGenerating(false); }
   };
 
-  const fetchYouTubeVideos = async (mIdx: number, month: any, lang: 'hindi' | 'english') => {
+  const fetchYouTubeVideos = async (mIdx: number, month: MonthlyPlan, lang: 'hindi' | 'english') => {
     setYoutubeLoading((prev) => ({ ...prev, [mIdx]: true }));
     setYoutubeVideos((prev) => ({ ...prev, [mIdx]: [] }));
     try {
       const skills = month.skills || [];
-      const res = await youtubeApi.suggest(month.title, skills, roadmap.targetRole, lang);
+      const res = await youtubeApi.suggest(month.title, skills, (roadmap as Roadmap).targetRole, lang);
       setYoutubeVideos((prev) => ({ ...prev, [mIdx]: res.data.data.videos }));
     } catch {
       toast.error('Failed to load video suggestions');
@@ -89,7 +91,7 @@ export default function RoadmapPage() {
     }
   };
 
-  const toggleYouTube = async (mIdx: number, month: any) => {
+  const toggleYouTube = async (mIdx: number, month: MonthlyPlan) => {
     if (youtubeOpen[mIdx]) {
       setYoutubeOpen((prev) => ({ ...prev, [mIdx]: false }));
       return;
@@ -101,7 +103,7 @@ export default function RoadmapPage() {
     }
   };
 
-  const switchLanguage = async (mIdx: number, month: any, lang: 'hindi' | 'english') => {
+  const switchLanguage = async (mIdx: number, month: MonthlyPlan, lang: 'hindi' | 'english') => {
     if (youtubeLang[mIdx] === lang) return;
     setYoutubeLang((prev) => ({ ...prev, [mIdx]: lang }));
     await fetchYouTubeVideos(mIdx, month, lang);
@@ -123,6 +125,12 @@ export default function RoadmapPage() {
   };
 
   if (loading) return <div className="flex justify-center items-center h-64"><Loader2 className="w-6 h-6 animate-spin text-purple-500" /></div>;
+
+  if (generating) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <LoadingProgress label="Regenerating your personalized roadmap..." isComplete={false} />
+    </div>
+  );
 
   if (!roadmap) return (
     <div className="flex flex-col items-center justify-center h-64 space-y-4">
@@ -162,9 +170,9 @@ export default function RoadmapPage() {
       </Card>
 
       {/* Monthly Plan */}
-      {roadmap.monthlyPlan?.map((month: any, mIdx: number) => {
-        const totalTasks = month.weeks?.reduce((s: number, w: any) => s + w.tasks.length, 0) || 0;
-        const doneTasks = month.weeks?.reduce((s: number, w: any) => s + w.tasks.filter((t: any) => t.completed).length, 0) || 0;
+      {roadmap.monthlyPlan?.map((month: MonthlyPlan, mIdx: number) => {
+        const totalTasks = month.weeks?.reduce((s: number, w: Week) => s + w.tasks.length, 0) || 0;
+        const doneTasks = month.weeks?.reduce((s: number, w: Week) => s + w.tasks.filter((t: Task) => t.completed).length, 0) || 0;
         const monthPct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
         return (

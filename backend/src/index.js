@@ -31,6 +31,7 @@ connectDB();
 app.use(helmet());
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:3001',
   'https://smart-career-roadmap-generator.vercel.app',
   process.env.CLIENT_URL,
 ].filter(Boolean);
@@ -40,16 +41,21 @@ app.use(
     origin: function (origin, callback) {
       // allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        var msg = 'The CORS policy for this site does not ' +
-                  'allow access from the specified Origin.';
-        return callback(new Error(msg), false);
+      
+      // In development, allow localhost or specified origins
+      const isAllowed = allowedOrigins.includes(origin);
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.warn(`Blocked by CORS: ${origin}`);
+        callback(new Error('Not allowed by CORS'), false);
       }
-      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Bypass-Tunnel-Reminder'],
+    optionsSuccessStatus: 204,
   })
 );
 app.use(globalLimiter);
