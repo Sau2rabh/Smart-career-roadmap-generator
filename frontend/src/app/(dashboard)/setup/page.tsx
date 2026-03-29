@@ -262,7 +262,7 @@ export default function SetupPage() {
                     </div>
                     <div className="space-y-1.5" ref={eduRef}>
                       <Label className="text-xs">Education Level</Label>
-                      <div className="relative">
+                      <div className={`relative transition-all duration-300 ${eduOpen ? 'mb-52 sm:mb-0' : 'mb-0'}`}>
                         <button
                           type="button"
                           onClick={() => setEduOpen(!eduOpen)}
