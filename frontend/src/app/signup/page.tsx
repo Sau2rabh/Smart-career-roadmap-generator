@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import toast from 'react-hot-toast';
-import { Sparkles, Eye, EyeOff, Loader2, CheckCircle2, Mail, Shield, ArrowLeft } from 'lucide-react';
+import { Sparkles, Eye, EyeOff, Loader2, CheckCircle2, Mail, Shield, ArrowLeft, Compass } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 type Step = 'info' | 'otp' | 'password';
@@ -123,12 +123,21 @@ export default function SignupPage() {
         className="w-full max-w-md"
       >
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/25 mb-4">
-            <Sparkles className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold gradient-text">Career Roadmap AI</h1>
-          <p className="text-muted-foreground text-sm mt-1">Start your AI-powered career journey</p>
+        <div className="flex flex-col items-center mb-8 group">
+          <motion.div 
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl shadow-purple-500/25 mb-4 group-hover:scale-110 transition-transform duration-500"
+          >
+            <motion.div
+              animate={{ rotate: [0, 20, -20, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Compass className="w-9 h-9 text-white" />
+            </motion.div>
+          </motion.div>
+          <h1 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">Smart Career Roadmap</h1>
+          <p className="text-muted-foreground text-sm mt-2">Start your AI-powered career journey</p>
         </div>
 
         <Card className="glass-card border-0">

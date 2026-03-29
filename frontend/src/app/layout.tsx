@@ -8,14 +8,19 @@ import { AuthProvider } from '@/contexts/AuthContext';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('http://localhost:3000'),
   title: 'Smart Career Roadmap Generator | AI-Powered Career Planning',
   description:
     'Generate personalized AI-powered career roadmaps, analyze skill gaps, chat with an AI mentor, and track your progress — all in one platform.',
   keywords: 'career roadmap, AI career planning, skill gap analysis, job preparation, career mentor',
+  icons: {
+    icon: '/icon.png',
+  },
   openGraph: {
     title: 'Smart Career Roadmap Generator',
     description: 'Your AI-powered career co-pilot.',
     type: 'website',
+    images: ['/icon.png'],
   },
   verification: {
     google: 'bu60WJk7m2PK1cvMXAiqWnHcd6c1dKu8KsYPliTnWck',

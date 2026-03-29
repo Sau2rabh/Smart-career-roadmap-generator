@@ -54,7 +54,11 @@ const userSchema = new mongoose.Schema(
     },
     otpPurpose: {
       type: String,
-      enum: ['signup', 'forgot_password'],
+      enum: ['signup', 'forgot_password', 'login'],
+      select: false,
+    },
+    loginOtpVerifiedAt: {
+      type: Date,
       select: false,
     },
   },

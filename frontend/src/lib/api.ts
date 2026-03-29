@@ -50,8 +50,9 @@ export default api;
 
 // ─── Typed API helpers ─────────────────────────────────────────────────────────
 export const authApi = {
-  sendOtp: (data: { email: string; purpose: 'signup' | 'forgot_password' }) => api.post('/auth/send-otp', data),
-  verifyOtp: (data: { email: string; otp: string; purpose: 'signup' | 'forgot_password' }) => api.post('/auth/verify-otp', data),
+  sendOtp: (data: { email: string; purpose: 'signup' | 'forgot_password' | 'login' }) => api.post('/auth/send-otp', data),
+  loginInit: (data: { email: string; password: string }) => api.post('/auth/login-init', data),
+  verifyOtp: (data: { email: string; otp: string; purpose: 'signup' | 'forgot_password' | 'login' }) => api.post('/auth/verify-otp', data),
   signup: (data: { name: string; email: string; password: string }) => api.post('/auth/signup', data),
   resetPassword: (data: { email: string; password: string }) => api.post('/auth/reset-password', data),
   login: (data: { email: string; password: string }) => api.post('/auth/login', data),

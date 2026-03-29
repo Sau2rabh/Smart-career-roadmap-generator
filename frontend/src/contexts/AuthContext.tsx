@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear the cookie that we set during login so middleware doesn't trigger
       document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
       setUser(null);
-      window.location.href = '/login';
+      window.location.href = '/';
     }
   };
 

@@ -76,9 +76,50 @@ const sendOtp = async (req, res, next) => {
       await user.save({ validateBeforeSave: false });
 
       await sendOtpEmail(email, otp, 'forgot_password');
+    } else if (purpose === 'login') {
+      const user = await User.findOne({ email });
+      if (!user) throw new AppError('No account found with this email', 404);
+
+      const otp = generateOtp();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+      user.otp = otp;
+      user.otpExpires = otpExpires;
+      user.otpPurpose = 'login';
+      await user.save({ validateBeforeSave: false });
+
+      await sendOtpEmail(email, otp, 'login');
     } else {
       throw new AppError('Invalid purpose', 400);
     }
+
+    res.json({ success: true, message: 'OTP sent to your email' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc  Initiate Login (Phase 1: Validate Email+Password)
+// @route POST /api/auth/login-init
+const initiateLogin = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) throw new AppError('Email and password are required', 400);
+
+    const user = await User.findOne({ email }).select('+password');
+    if (!user || !(await user.comparePassword(password))) {
+      throw new AppError('Invalid email or password', 401);
+    }
+
+    const otp = generateOtp();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.otp = otp;
+    user.otpExpires = otpExpires;
+    user.otpPurpose = 'login';
+    await user.save({ validateBeforeSave: false });
+
+    await sendOtpEmail(email, otp, 'login');
 
     res.json({ success: true, message: 'OTP sent to your email' });
   } catch (error) {
@@ -107,6 +148,8 @@ const verifyOtp = async (req, res, next) => {
 
     if (purpose === 'signup') {
       user.isEmailVerified = true;
+    } else if (purpose === 'login') {
+      user.loginOtpVerifiedAt = new Date();
     }
 
     await user.save({ validateBeforeSave: false });
@@ -178,13 +221,22 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select('+password +loginOtpVerifiedAt');
     if (!user || !(await user.comparePassword(password))) {
       throw new AppError('Invalid email or password', 401);
     }
 
+    // Check if OTP was verified recently (within 15 mins)
+    if (!user.loginOtpVerifiedAt || new Date() - user.loginOtpVerifiedAt > 15 * 60 * 1000) {
+      throw new AppError('Please verify your email via OTP first', 401);
+    }
+
+    // Clear the verified timestamp
+    user.loginOtpVerifiedAt = undefined;
+    
     const { accessToken, refreshToken } = generateTokens(user._id);
-    await User.findByIdAndUpdate(user._id, { refreshToken });
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
     setCookies(res, accessToken, refreshToken);
 
     res.json({
@@ -253,4 +305,4 @@ const logout = async (req, res, next) => {
   }
 };
 
-module.exports = { sendOtp, verifyOtp, signup, resetPassword, login, refresh, getMe, logout };
+module.exports = { sendOtp, verifyOtp, signup, resetPassword, login, refresh, getMe, logout, initiateLogin };

@@ -35,10 +35,11 @@ const logToConsole = (to, otp, purpose) => {
 };
 
 const getEmailTemplate = (otp, purpose) => {
-  const titleMap = { signup: 'Email Verification', forgot_password: 'Password Reset' };
+  const titleMap = { signup: 'Email Verification', forgot_password: 'Password Reset', login: 'Login Verification' };
   const descMap = {
     signup: 'Use the OTP below to verify your email and complete registration.',
     forgot_password: 'Use the OTP below to reset your password. It expires in 10 minutes.',
+    login: 'Use the OTP below to verify your login. It expires in 10 minutes.',
   };
 
   return `<!DOCTYPE html>
@@ -81,6 +82,7 @@ const sendOtpEmail = async (to, otp, purpose = 'signup') => {
   const subjectMap = {
     signup: 'Verify your email – Career Roadmap AI',
     forgot_password: 'Reset your password – Career Roadmap AI',
+    login: 'Login Verification – Career Roadmap AI',
   };
 
   const html = getEmailTemplate(otp, purpose);
