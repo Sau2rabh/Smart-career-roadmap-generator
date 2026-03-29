@@ -17,6 +17,9 @@ export const metadata: Metadata = {
     description: 'Your AI-powered career co-pilot.',
     type: 'website',
   },
+  verification: {
+    google: 'bu60WJk7m2PK1cvMXAiqWnHcd6c1dKu8KsYPliTnWck',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
