@@ -34,24 +34,27 @@ const ProjectLoader = ({ onComplete, label, isComplete = false }: { onComplete: 
         if (isComplete) {
           if (prev >= 100) {
             clearInterval(interval);
-            onComplete();
             return 100;
           }
-          return Math.min(prev + 20, 100); // Super fast snap once data is back
+          return Math.min(prev + 20, 100);
         }
 
         if (prev < 85) {
-          // Faster, smoother climb
           return prev + (Math.random() * 3 + 1);
         } else if (prev < 98) {
-          // Slow down but don't stall completely
           return prev + 0.5;
         }
         return prev;
       });
     }, 80);
     return () => clearInterval(interval);
-  }, [onComplete, isComplete]);
+  }, [isComplete]);
+
+  useEffect(() => {
+    if (progress >= 100 && isComplete) {
+      onComplete();
+    }
+  }, [progress, isComplete, onComplete]);
 
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-8 min-h-[400px] w-full max-w-lg mx-auto">

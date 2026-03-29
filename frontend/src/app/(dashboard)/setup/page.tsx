@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { profileApi, roadmapApi } from '@/lib/api';
@@ -26,6 +27,8 @@ const commonSkills = ['JavaScript', 'Python', 'React', 'Node.js', 'SQL', 'TypeSc
 
 export default function SetupPage() {
   const { refreshUser } = useAuth();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -42,6 +45,19 @@ export default function SetupPage() {
     education: { level: 'bachelor', field: '', institution: '' },
     bio: '',
   });
+
+  const [eduOpen, setEduOpen] = useState(false);
+  const eduRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (eduRef.current && !eduRef.current.contains(event.target as Node)) {
+        setEduOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchProfile();
@@ -227,7 +243,11 @@ export default function SetupPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {expLevels.map(({ value, label, desc }) => (
                         <button key={value} onClick={() => setForm({ ...form, experienceLevel: value })}
-                          className={`p-3 rounded-xl text-left transition-all border ${form.experienceLevel === value ? 'border-purple-500 bg-purple-500/5 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 ring-1 ring-purple-500/20' : 'border-border hover:border-purple-300'}`}>
+                          className={`p-3 rounded-xl text-left transition-all border ${
+                            form.experienceLevel === value 
+                              ? `border-purple-500 ${isDark ? 'bg-purple-900/30 text-purple-300' : 'bg-purple-100/80 text-purple-950'} ring-1 ring-purple-500/20` 
+                              : 'border-border hover:border-purple-300'
+                          }`}>
                           <p className="font-bold text-sm">{label}</p>
                           <p className="text-[10px] text-muted-foreground font-medium">{desc}</p>
                         </button>
@@ -237,24 +257,54 @@ export default function SetupPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-xs">Years of Experience</Label>
-                      <Input type="number" min={0} max={50} value={form.yearsOfExperience}
-                        onChange={(e) => setForm({ ...form, yearsOfExperience: +e.target.value })} className="h-10 text-foreground bg-muted/30" />
+                      <Input type="number" min={0} max={50} value={form.yearsOfExperience || ''}
+                        onChange={(e) => setForm({ ...form, yearsOfExperience: e.target.value === '' ? 0 : Number(e.target.value) })} className="h-10 text-foreground bg-muted/30" />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5" ref={eduRef}>
                       <Label className="text-xs">Education Level</Label>
                       <div className="relative">
-                        <select
-                          value={form.education.level}
-                          onChange={(e) => setForm({ ...form, education: { ...form.education, level: e.target.value } })}
-                          className="w-full h-10 px-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
+                        <button
+                          type="button"
+                          onClick={() => setEduOpen(!eduOpen)}
+                          className="w-full h-10 px-3 flex items-center justify-between rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-left"
                         >
-                          {['high_school', 'associate', 'bachelor', 'master', 'phd', 'self_taught', 'bootcamp'].map((l) => (
-                            <option key={l} value={l} className="bg-background text-foreground">
-                              {l.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rotate-90 text-muted-foreground pointer-events-none" />
+                          <span className="truncate">
+                            {form.education.level.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                          </span>
+                          <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${eduOpen ? '-rotate-90' : 'rotate-90'} text-muted-foreground`} />
+                        </button>
+
+                        <AnimatePresence>
+                          {eduOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                              transition={{ duration: 0.2, ease: "easeOut" }}
+                              className={`absolute z-50 top-full left-0 w-full mt-2 py-2 rounded-xl border border-border shadow-2xl ring-1 max-h-48 overflow-y-auto custom-scrollbar transition-colors duration-200 ${
+                                isDark ? 'bg-[#0a0a0f] text-foreground ring-white/10' : 'bg-white text-black ring-black/5'
+                              }`}
+                            >
+                              {['high_school', 'associate', 'bachelor', 'master', 'phd', 'self_taught', 'bootcamp'].map((l) => (
+                                <button
+                                  key={l}
+                                  type="button"
+                                  onClick={() => {
+                                    setForm({ ...form, education: { ...form.education, level: l } });
+                                    setEduOpen(false);
+                                  }}
+                                  className={`w-full px-4 py-2.5 text-left text-sm transition-all ${
+                                    form.education.level === l 
+                                      ? 'bg-purple-600 text-white font-bold shadow-sm' 
+                                      : `${isDark ? 'text-gray-300 hover:bg-purple-500/10 hover:text-purple-400' : 'text-black hover:bg-purple-50 hover:text-purple-600'}`
+                                  }`}
+                                >
+                                  {l.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                                </button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
                   </div>

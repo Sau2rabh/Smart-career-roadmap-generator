@@ -109,10 +109,10 @@ const server = app.listen(PORT, '0.0.0.0', () => {
         console.error(`❌ [Self-Ping] Error: ${err.message}`);
       });
     }, 14 * 60 * 1000);
-  } else {
-    console.log(`ℹ️ [Self-Ping] Not started. To enable, set SERVER_URL env variable (Render sets RENDER_EXTERNAL_URL automatically).`);
-  }
-});
+    } else if (process.env.NODE_ENV !== 'development') {
+      console.log(`ℹ️ [Self-Ping] Not started. To enable, set SERVER_URL env variable (Render sets RENDER_EXTERNAL_URL automatically).`);
+    }
+  });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {

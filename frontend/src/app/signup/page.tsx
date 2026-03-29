@@ -136,32 +136,34 @@ export default function SignupPage() {
               <Compass className="w-9 h-9 text-white" />
             </motion.div>
           </motion.div>
-          <h1 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">Smart Career Roadmap</h1>
-          <p className="text-muted-foreground text-sm mt-2">Start your AI-powered career journey</p>
+          <h1 className="text-2xl sm:text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-center tracking-tight">Smart Career Roadmap</h1>
+          <p className="text-muted-foreground text-sm mt-2 text-center">Start your AI-powered career journey</p>
         </div>
 
         <Card className="glass-card border-0">
-          <CardHeader className="pb-4">
+          <CardHeader className="pb-4 px-4 sm:px-6">
             <CardTitle className="text-xl">Create your account</CardTitle>
             <CardDescription>Free forever · No credit card needed</CardDescription>
 
             {/* Step indicator */}
-            <div className="flex items-center gap-2 mt-4">
+            <div className="flex items-center gap-1 sm:gap-2 mt-4 overflow-hidden">
               {steps.map((s, i) => (
-                <div key={s.id} className="flex items-center gap-2 flex-1">
-                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap transition-all ${i <= currentStepIndex ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-muted/50 text-muted-foreground border border-border/40'}`}>
-                    {i < currentStepIndex ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : s.icon}
-                    {s.label}
+                <div key={s.id} className="flex items-center gap-1 sm:gap-2 flex-1">
+                  <div className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap transition-all flex-shrink-0 ${i <= currentStepIndex ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-muted/50 text-muted-foreground border border-border/40'}`}>
+                    {i < currentStepIndex ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : s.icon}
+                    <span className={i === currentStepIndex ? 'inline' : 'hidden sm:inline'}>
+                      {s.label}
+                    </span>
                   </div>
                   {i < steps.length - 1 && (
-                    <div className={`flex-1 h-px transition-colors ${i < currentStepIndex ? 'bg-purple-500/50' : 'bg-border/30'}`} />
+                    <div className={`flex-1 h-px min-w-[10px] transition-colors ${i < currentStepIndex ? 'bg-purple-500/50' : 'bg-border/30'}`} />
                   )}
                 </div>
               ))}
             </div>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             <AnimatePresence mode="wait">
 
               {/* STEP 1: Name + Email */}
