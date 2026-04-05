@@ -5,7 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
 export const metadata: Metadata = {
   metadataBase: new URL('http://localhost:3000'),
@@ -14,7 +14,9 @@ export const metadata: Metadata = {
     'Generate personalized AI-powered career roadmaps, analyze skill gaps, chat with an AI mentor, and track your progress — all in one platform.',
   keywords: 'career roadmap, AI career planning, skill gap analysis, job preparation, career mentor',
   icons: {
-    icon: '/icon.png',
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/icon.png',
   },
   openGraph: {
     title: 'Smart Career Roadmap Generator',
