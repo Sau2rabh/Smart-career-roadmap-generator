@@ -105,7 +105,7 @@ export default function SkillGapPage() {
           {/* Match Score */}
           <Card className="glass-card border-0">
             <CardContent className="p-6 flex items-center gap-6">
-              <div className="relative w-24 h-24 flex-shrink-0">
+              <div className="relative w-24 h-24 shrink-0">
                 <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="40" fill="none" stroke="hsl(var(--muted))" strokeWidth="10" />
                   <circle cx="50" cy="50" r="40" fill="none" stroke="#9333ea" strokeWidth="10"
@@ -133,9 +133,9 @@ export default function SkillGapPage() {
             <CardContent>
               <div className="space-y-3">
                 {analysis.missingSkills?.map((skill: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                    <div>
-                      <p className="font-medium text-sm">{skill.name}</p>
+                  <div key={i} className="flex items-start justify-between p-3 rounded-xl bg-muted/50 gap-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm wrap-break-word">{skill.name}</p>
                       <a 
                         href={`https://www.youtube.com/results?search_query=${encodeURIComponent(skill.name + ' tutorial in Hindi')}`} 
                         target="_blank" 
@@ -145,7 +145,7 @@ export default function SkillGapPage() {
                         Start learning on YouTube →
                       </a>
                     </div>
-                    <Badge className={`text-xs ${importanceColors[skill.importance]}`}>{skill.importance?.replace('_', ' ')}</Badge>
+                    <Badge className={`text-xs shrink-0 ${importanceColors[skill.importance]}`}>{skill.importance?.replace('_', ' ')}</Badge>
                   </div>
                 ))}
               </div>
@@ -158,7 +158,9 @@ export default function SkillGapPage() {
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {analysis.extractedSkills?.map((skill: any, i: number) => (
-                  <Badge key={i} variant="secondary" className="text-xs">{skill.name} · {skill.level}</Badge>
+                  <Badge key={i} variant="secondary" className="text-xs py-1 px-3">
+                    {skill.name} <span className="mx-1 text-muted-foreground">·</span> {skill.level}
+                  </Badge>
                 ))}
               </div>
             </CardContent>
@@ -171,7 +173,7 @@ export default function SkillGapPage() {
               <CardContent>
                 <ul className="space-y-2">
                   {analysis.recommendations.map((rec: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>{rec}</li>
+                    <li key={i} className="flex items-start gap-2 text-sm"><span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>{rec}</li>
                   ))}
                 </ul>
               </CardContent>

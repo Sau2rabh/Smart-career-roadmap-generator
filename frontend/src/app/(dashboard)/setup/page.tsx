@@ -146,7 +146,7 @@ export default function SetupPage() {
           <Card className="md:col-span-2 glass-card border-0 overflow-hidden">
             <CardContent className="pt-6 space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center shrink-0">
                   <User className="w-6 h-6 text-purple-500" />
                 </div>
                 <div className="min-w-0">
@@ -335,9 +335,14 @@ export default function SetupPage() {
                   {form.currentSkills.length > 0 && (
                     <div className="flex flex-wrap gap-2 pt-2">
                       {form.currentSkills.map(({ name, level }) => (
-                        <Badge key={name} variant="secondary" className="gap-1 pl-3 pr-1 py-1 rounded-full text-foreground bg-muted hover:bg-muted/80 border-0 shadow-sm">
-                          {name}
-                          <button onClick={() => removeSkill(name)} className="ml-1 p-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+                        <Badge key={name} variant="secondary" className="gap-2 pl-3 pr-1.5 py-1.5 rounded-2xl text-foreground bg-muted hover:bg-muted/80 border-0 shadow-sm items-start">
+                          <span className="leading-relaxed">{name}</span>
+                          <button 
+                            onClick={() => removeSkill(name)} 
+                            className="mt-0.5 p-0.5 rounded-full hover:bg-destructive/20 hover:text-destructive transition-colors shrink-0"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
                         </Badge>
                       ))}
                     </div>
@@ -383,12 +388,16 @@ export default function SetupPage() {
                     <p className="text-sm flex justify-between"><span className="text-muted-foreground">Experience:</span> <span className="font-bold text-foreground">{form.experienceLevel} · {form.yearsOfExperience}y</span></p>
                     <p className="text-sm flex justify-between"><span className="text-muted-foreground">Commitment:</span> <span className="font-bold text-foreground">{form.timeCommitmentHoursPerWeek}h / week</span></p>
                     <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border">
-                      {form.currentSkills.map((s) => <Badge key={s.name} variant="secondary" className="text-[10px] py-0">{s.name}</Badge>)}
+                      {form.currentSkills.map((s) => (
+                        <Badge key={s.name} variant="secondary" className="text-[10px] py-0.5 px-2 max-w-full">
+                          {s.name}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
                   <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 shadow-sm shadow-purple-500/5">
                     <div className="flex items-start gap-3">
-                      <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
+                      <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0 mt-1" />
                       <div className="text-sm">
                         <p className="font-bold text-purple-700 dark:text-purple-300">Ready to update your roadmap!</p>
                         <p className="text-muted-foreground text-xs mt-1 leading-relaxed">Changes will be used to intelligently personalize your career journey.</p>
@@ -412,7 +421,7 @@ export default function SetupPage() {
             Next <ChevronRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button onClick={submit} disabled={loading} className="rounded-xl gap-2 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white flex-1 sm:flex-none h-11 shadow-lg shadow-purple-600/20 active:scale-95 transition-transform">
+          <Button onClick={submit} disabled={loading} className="rounded-xl gap-2 bg-linear-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white flex-1 sm:flex-none h-11 shadow-lg shadow-purple-600/20 active:scale-95 transition-transform">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {loading ? 'Saving...' : 'Save & Update'}
           </Button>
