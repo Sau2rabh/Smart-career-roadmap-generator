@@ -42,9 +42,6 @@ app.use(
 app.use(helmet());
 app.use(globalLimiter);
 
-// ─── Connect to Database ──────────────────────────────────────────────────────
-connectDB();
-
 // ─── General Middleware ───────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -85,39 +82,48 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+const PORT = process.env.PORT || 5001;
 
-  // ─── Self-Pinger for Free Tier Hosting ──────────────────────────────────────
-  // Render and similar free tiers sleep after 15 minutes of inactivity.
-  // This interval pings the server every 14 minutes to keep it awake.
-  const backendUrl = process.env.RENDER_EXTERNAL_URL || process.env.SERVER_URL;
-  if (backendUrl) {
-    const protocol = backendUrl.startsWith('https') ? require('https') : require('http');
-    console.log(`🕒 Starting self-ping service for: ${backendUrl}`);
+const startServer = async () => {
+  try {
+    console.log('Attempting to connect to MongoDB...');
+    await connectDB();
     
-    // Ping every 14 minutes (14 * 60 * 1000 milliseconds)
-    setInterval(() => {
-      protocol.get(`${backendUrl}/api/health`, (res) => {
-        if (res.statusCode === 200) {
-          console.log(`✅ [Self-Ping] Server kept alive at ${new Date().toLocaleString()}`);
-        } else {
-          console.error(`⚠️ [Self-Ping] Failed with status code: ${res.statusCode}`);
-        }
-      }).on('error', (err) => {
-        console.error(`❌ [Self-Ping] Error: ${err.message}`);
-      });
-    }, 14 * 60 * 1000);
-    } else if (process.env.NODE_ENV !== 'development') {
-      console.log(`ℹ️ [Self-Ping] Not started. To enable, set SERVER_URL env variable (Render sets RENDER_EXTERNAL_URL automatically).`);
-    }
-  });
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      
+      // ─── Self-Pinger for Free Tier Hosting ──────────────────────────────────────
+      const backendUrl = process.env.RENDER_EXTERNAL_URL || process.env.SERVER_URL;
+      if (backendUrl) {
+        const protocol = backendUrl.startsWith('https') ? require('https') : require('http');
+        console.log(`🕒 Starting self-ping service for: ${backendUrl}`);
+        
+        setInterval(() => {
+          protocol.get(`${backendUrl}/api/health`, (res) => {
+            if (res.statusCode === 200) {
+              console.log(`✅ [Self-Ping] Server kept alive at ${new Date().toLocaleString()}`);
+            } else {
+              console.error(`⚠️ [Self-Ping] Failed with status code: ${res.statusCode}`);
+            }
+          }).on('error', (err) => {
+            console.error(`❌ [Self-Ping] Error: ${err.message}`);
+          });
+        }, 14 * 60 * 1000);
+      }
+    });
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('Unhandled Rejection:', err.message);
-  server.close(() => process.exit(1));
-});
+    // Handle unhandled promise rejections
+    process.on('unhandledRejection', (err) => {
+      console.error('Unhandled Rejection:', err.message);
+      server.close(() => process.exit(1));
+    });
+
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 module.exports = app;

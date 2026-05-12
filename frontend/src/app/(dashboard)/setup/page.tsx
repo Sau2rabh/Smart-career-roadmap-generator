@@ -66,17 +66,18 @@ export default function SetupPage() {
   const fetchProfile = async () => {
     try {
       const res = await profileApi.get();
-      if (res.data.data) {
-        const p = res.data.data;
+      const profile = res.data.data.profile;
+      
+      if (profile) {
         setForm({
-          targetRole: p.targetRole || '',
-          experienceLevel: p.experienceLevel || 'entry',
-          currentSkills: p.currentSkills || [],
-          timeCommitmentHoursPerWeek: p.timeCommitmentHoursPerWeek || 10,
-          yearsOfExperience: p.yearsOfExperience || 0,
-          preferredLearningStyle: p.preferredLearningStyle || 'mixed',
-          education: p.education || { level: 'bachelor', field: '', institution: '' },
-          bio: p.bio || '',
+          targetRole: profile.targetRole || '',
+          experienceLevel: profile.experienceLevel || 'entry',
+          currentSkills: profile.currentSkills || [],
+          timeCommitmentHoursPerWeek: profile.timeCommitmentHoursPerWeek || 10,
+          yearsOfExperience: profile.yearsOfExperience || 0,
+          preferredLearningStyle: profile.preferredLearningStyle || 'mixed',
+          education: profile.education || { level: 'bachelor', field: '', institution: '' },
+          bio: profile.bio || '',
         });
         setIsEditing(false);
       } else {

@@ -104,7 +104,8 @@ const sendOtpEmail = async (to, otp, purpose = 'signup') => {
         console.log('✅ OTP sent via Google Script to ' + to);
         return;
       } else {
-        console.error('⚠️ Google Script error status:', response.status);
+        const errText = await response.text();
+        console.error(`⚠️ Google Script error (${response.status}):`, errText);
       }
     } catch (err) {
       console.error('⚠️ Google Script failed:', err.message);
@@ -116,14 +117,20 @@ const sendOtpEmail = async (to, otp, purpose = 'signup') => {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-      await resend.emails.send({
+      const { data, error } = await resend.emails.send({
         from: `Career Roadmap AI <${fromEmail}>`,
         to: [to],
         subject: subjectMap[purpose],
         html,
       });
-      console.log('✅ OTP sent via Resend to ' + to);
-      return;
+
+      if (error) {
+        console.error('⚠️ Resend API error:', error.message || error);
+        // Continue to fallback
+      } else {
+        console.log('✅ OTP sent via Resend to ' + to, data?.id || '');
+        return;
+      }
     } catch (err) {
       console.error('⚠️ Resend failed:', err.message);
     }
@@ -149,8 +156,13 @@ const sendOtpEmail = async (to, otp, purpose = 'signup') => {
     }
   }
 
-  // ─── Option 3: Console (dev fallback) ────────────────────────────────────
-  logToConsole(to, otp, purpose);
+  // ─── Final Fallback: Console (Only in development) ───────────────────────
+  if (process.env.NODE_ENV === 'development') {
+    logToConsole(to, otp, purpose);
+    return;
+  }
+
+  throw new Error('All email sending methods failed. Please check backend logs.');
 };
 
 module.exports = { sendOtpEmail };
